@@ -26,4 +26,5 @@ X = x.drop('ViolentCrimesPerPop', axis=1).to_numpy()
 y = x['ViolentCrimesPerPop'].to_numpy()
 
 rb = RBLasso(rao_s2=True, alpha=0.1).fit(X, y, num_iter=2000)
-rmse = np.sqrt(np.mean((rb.predict(X) - y)**2))```
+rmse = np.sqrt(np.mean((rb.predict(X) - y)**2))
+```
