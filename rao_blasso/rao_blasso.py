@@ -2,16 +2,16 @@ import numpy as np
 from numpy import linalg as np_linalg
 from scipy import linalg as sp_linalg
 from scipy import stats as sp_stats
+from tqdm import tqdm
 
 class RBLasso():
 
-    def __init__(self, alpha=1.0, rao_s2=False, keep_history=False, init_ols=True, seed=None):
+    def __init__(self, alpha=1.0, rao_s2=False, keep_history=False, init_ols=True):
         """Parameters:
         * alpha: the lasso (a.k.a. "lambda")  regularization constant. 
         * rao_s2: if True, use a Rao-Blackwellized estimate for the variance term.
         * keep_history: if True, keep the value of each parameter during every iteration. 
         * init_ols: if True, initialize inference with OLS solution (not possible if p > n). 
-        * seed: RNG seed. 
         """
         self.__alpha = alpha
         self.__rao_s2 = rao_s2
@@ -57,8 +57,8 @@ class RBLasso():
             chol_XtX = sp_linalg.cho_factor(XtX)
             self.__beta[0] = sp_linalg.cho_solve(chol_XtX, Xty)
         else:
-            ## otherwise, random gaussian
-            self.__beta[0] = np.random.randn(X.shape[1])
+            ## otherwise, random uniform
+            self.__beta[0] = 2*np.random.rand(X.shape[1]) - 1.0
 
         ## initialize sigma with RSS of beta. 
         self.__sigma = np.zeros(arr_size)
@@ -69,7 +69,7 @@ class RBLasso():
         self.__tau = np.zeros((arr_size, X.shape[1]))
 
         ## iterate
-        for cur_iter in range(1, num_iter):
+        for cur_iter in tqdm(range(1, num_iter)):
 
             prev_pos = (cur_iter - 1) if self.__keep_history else (cur_iter - 1) % 2
             next_pos = cur_iter if self.__keep_history else cur_iter % 2
@@ -80,7 +80,7 @@ class RBLasso():
             self.__tau[next_pos] = sp_stats.invgauss.rvs(mu=np.exp(tau_loc) / tau_scale, scale=tau_scale)
 
             ## update beta
-            beta_A = XtX + np.diag(self.__tau[next_pos])            
+            beta_A = XtX + np.diag(self.__tau[next_pos])
             beta_A_chol = sp_linalg.cho_factor(beta_A)
             beta_mu = sp_linalg.cho_solve(beta_A_chol, Xty)
             beta_cov = sp_linalg.cho_solve(beta_A_chol, np.diag(np.repeat(self.__sigma[prev_pos], X.shape[1])))
@@ -103,8 +103,8 @@ class RBLasso():
                 
             self.__sigma[next_pos] = sp_stats.invgamma.rvs(a=sigma_shape, scale=sigma_scale)
             self.__iterations += 1
-            
-        pass
+
+        return self
 
     def predict(self, X):
         """Computes prediction from fitted model.
