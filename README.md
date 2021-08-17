@@ -14,14 +14,14 @@ a moderate amount of features.
   - scipy
   - tqdm
 
-## Example
+## Runnable example
 
 ```
 from rao_blasso import RBLasso 
 import pandas as pd
 import numpy as np
 
-x = pd.read_csv('commcrime.csv')
+x = pd.read_csv('https://llperezp-datasets.s3.us-east-2.amazonaws.com/commcrime.csv')
 X = x.drop('ViolentCrimesPerPop', axis=1).to_numpy()
 y = x['ViolentCrimesPerPop'].to_numpy()
 
